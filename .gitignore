@@ -1,0 +1,53 @@
+.env
+*.835
+*.837
+*.x12
+*.edi
+*.era
+node_modules/
+.next/
+out/
+next-env.d.ts
+*.tsbuildinfo
+
+# Secrets: only .env.example is committed
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Patient data must NEVER be committed. Use synthetic data only.
+*.835
+*.837
+*.x12
+*.edi
+*.era
+*.hl7
+data/
+uploads/
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+*.db
+
+# Secrets: only .env.example is committed
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Patient data must NEVER be committed. Use synthetic data only.
+*.835
+*.837
+*.x12
+*.edi
+*.era
+*.hl7
+data/
+uploads/

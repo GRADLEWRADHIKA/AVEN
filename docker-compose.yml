@@ -1,0 +1,58 @@
+# Runs the whole AVEN stack for local development: database, API and web app.
+#   docker compose up --build
+# Then open http://localhost:3000 (web) and http://localhost:8000/docs (API docs).
+name: aven
+
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-aven}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-aven}
+      POSTGRES_DB: ${POSTGRES_DB:-aven}
+    ports:
+      - "127.0.0.1:5432:5432" # reachable from your machine only, not from the network
+    volumes:
+      - aven-db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-aven} -d ${POSTGRES_DB:-aven}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build: ./aven-api
+    # Apply migrations, then run the server with auto-reload on code changes.
+    command: sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
+    environment:
+      ENV: development
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-aven}:${POSTGRES_PASSWORD:-aven}@db:5432/${POSTGRES_DB:-aven}
+      SECRET_KEY: ${SECRET_KEY:-dev-only-secret-change-me-dev-only-secret-change-me}
+      CORS_ORIGINS: http://localhost:3000
+      ALLOW_ORG_SIGNUP: "true"
+    ports:
+      - "127.0.0.1:8000:8000"
+    volumes:
+      - ./aven-api:/app
+    depends_on:
+      db:
+        condition: service_healthy
+
+  web:
+    build:
+      context: ./aven-web
+      target: dev
+    environment:
+      API_URL: http://api:8000
+      COOKIE_SECURE: "false"
+    ports:
+      - "127.0.0.1:3000:3000"
+    volumes:
+      - ./aven-web:/app
+      - /app/node_modules # keep the container's installed packages, not the host's
+      - /app/.next
+    depends_on:
+      - api
+
+volumes:
+  aven-db:
